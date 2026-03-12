@@ -1,15 +1,16 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Sphere } from '@react-three/drei';
+import { OrbitControls, Stars, Sphere, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
 /**
- * Rotating Earth sphere rendered with a solid material.
- * A texture can be swapped in by replacing the `color` prop with a
- * `map={useTexture('/earth.jpg')}` attribute once a texture asset is present.
+ * Rotating Earth sphere rendered with a realistic texture.
  */
 function Earth() {
   const meshRef = useRef(null);
+
+  // Load Earth texture from public/textures
+  const earthTexture = useTexture('/textures/earth_daymap.jpg');
 
   useFrame((_state, delta) => {
     if (meshRef.current) {
@@ -19,7 +20,11 @@ function Earth() {
 
   return (
     <Sphere ref={meshRef} args={[1, 64, 64]}>
-      <meshPhongMaterial color="#1a6b9a" emissive="#0a2e3f" specular="#4fc3f7" shininess={30} />
+      <meshPhongMaterial
+        map={earthTexture}
+        specular="#4fc3f7"
+        shininess={10}
+      />
     </Sphere>
   );
 }
@@ -44,8 +49,7 @@ function Atmosphere() {
  * Globe component — wraps everything in a Three.js Canvas.
  *
  * @param {object} props
- * @param {React.ReactNode} props.children  – Additional Three.js scene objects
- *                                           (e.g. SatelliteLayer) rendered inside the canvas.
+ * @param {React.ReactNode} props.children
  */
 export default function Globe({ children }) {
   return (

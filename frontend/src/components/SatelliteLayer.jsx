@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sphere, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -6,17 +6,11 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 /**
  * Convert geodetic lat/lon/alt to Three.js Cartesian coordinates.
- * The globe radius is 1 unit; altitude is scaled so that a 400 km LEO
- * orbit sits visibly above the surface.
- *
- * @param {number} lat    – Latitude in degrees
- * @param {number} lon    – Longitude in degrees
- * @param {number} altKm  – Altitude in km
- * @returns {THREE.Vector3}
  */
 function latLonAltToVec3(lat, lon, altKm) {
   const EARTH_RADIUS_KM = 6371;
   const GLOBE_RADIUS = 1;
+
   const r = GLOBE_RADIUS * (1 + altKm / EARTH_RADIUS_KM);
 
   const phi = ((90 - lat) * Math.PI) / 180;
@@ -30,31 +24,48 @@ function latLonAltToVec3(lat, lon, altKm) {
 }
 
 /**
- * Individual satellite dot rendered in the Three.js scene.
- *
- * @param {object}  props
- * @param {object}  props.satellite  – { name, lat, lon, alt_km }
- * @param {boolean} props.isHovered  – Whether this satellite is currently hovered
- * @param {function} props.onHover   – Hover enter callback
- * @param {function} props.onUnhover – Hover leave callback
+ * Individual satellite marker
  */
 function SatelliteDot({ satellite, isHovered, onHover, onUnhover }) {
-  const pos = latLonAltToVec3(satellite.lat, satellite.lon, satellite.alt_km);
+
+  const pos = latLonAltToVec3(
+    satellite.lat,
+    satellite.lon,
+    satellite.alt_km
+  );
+
   const color = isHovered ? '#ffeb3b' : '#00e5ff';
-  const size = isHovered ? 0.018 : 0.012;
+
+  const size = isHovered ? 0.02 : 0.013;
 
   return (
     <group position={pos}>
+
+      {/* Main satellite sphere */}
       <Sphere
-        args={[size, 8, 8]}
-        onPointerEnter={(e) => { e.stopPropagation(); onHover(); }}
+        args={[size, 10, 10]}
+        onPointerEnter={(e) => {
+          e.stopPropagation();
+          onHover();
+        }}
         onPointerLeave={() => onUnhover()}
       >
         <meshBasicMaterial color={color} />
       </Sphere>
 
+      {/* Satellite glow halo */}
+      <Sphere args={[size * 2.2, 16, 16]}>
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.15}
+        />
+      </Sphere>
+
+      {/* Hover tooltip */}
       {isHovered && (
         <Html distanceFactor={8} style={{ pointerEvents: 'none' }}>
+
           <div
             style={{
               background: 'rgba(10,10,20,0.92)',
@@ -64,10 +75,13 @@ function SatelliteDot({ satellite, isHovered, onHover, onUnhover }) {
               color: '#e0f7fa',
               fontSize: 12,
               whiteSpace: 'nowrap',
-              transform: 'translate(-50%, -130%)',
+              transform: 'translate(-50%, -140%)',
+              backdropFilter: 'blur(6px)'
             }}
           >
-            <strong style={{ color: '#00e5ff' }}>{satellite.name}</strong>
+            <strong style={{ color: '#00e5ff' }}>
+              {satellite.name}
+            </strong>
             <br />
             Alt: {satellite.alt_km?.toFixed(0)} km
             <br />
@@ -75,74 +89,105 @@ function SatelliteDot({ satellite, isHovered, onHover, onUnhover }) {
           </div>
         </Html>
       )}
+
     </group>
   );
 }
 
 /**
- * SatelliteLayer — fetches live satellite positions from the backend and
- * renders them as coloured dots in the Three.js globe scene.
- *
- * @param {object}  props
- * @param {string}  [props.group='active']  – Celestrak satellite group
- * @param {number}  [props.limit=50]        – Maximum satellites to display
+ * SatelliteLayer — fetches satellites and renders them
  */
 export default function SatelliteLayer({ group = 'active', limit = 50 }) {
+
   const [satellites, setSatellites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useEffect(() => {
+
     let cancelled = false;
 
     async function loadSatellites() {
+
       try {
+
         setLoading(true);
         setError(null);
 
-        // Fetch TLE list
-        const res = await fetch(`${API_URL}/satellites?group=${group}&limit=${limit}`);
+        const res = await fetch(
+          `${API_URL}/satellites?group=${group}&limit=${limit}`
+        );
+
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const tleList = await res.json();
 
-        // Get current position for each satellite (sequential to avoid hammering the API)
         const withPositions = await Promise.all(
+
           tleList.map(async (sat) => {
+
             try {
+
               const pRes = await fetch(
                 `${API_URL}/propagate?line1=${encodeURIComponent(sat.line1)}&line2=${encodeURIComponent(sat.line2)}&hours=1&step_minutes=60`
               );
+
               if (!pRes.ok) return null;
+
               const positions = await pRes.json();
+
               if (!positions.length) return null;
+
               const p = positions[0];
-              return { name: sat.name, lat: p.lat, lon: p.lon, alt_km: p.alt_km };
+
+              return {
+                name: sat.name,
+                lat: p.lat,
+                lon: p.lon,
+                alt_km: p.alt_km
+              };
+
             } catch {
               return null;
             }
+
           })
         );
 
         if (!cancelled) {
           setSatellites(withPositions.filter(Boolean));
         }
+
       } catch (err) {
+
         if (!cancelled) setError(err.message);
+
       } finally {
+
         if (!cancelled) setLoading(false);
+
       }
+
     }
 
     loadSatellites();
+
     return () => { cancelled = true; };
+
   }, [group, limit]);
 
-  if (loading || error || !satellites.length) return null;
+  if (loading) return null;
+
+  if (error) {
+    console.warn("Satellite fetch error:", error);
+  }
 
   return (
     <group>
+
       {satellites.map((sat, i) => (
+
         <SatelliteDot
           key={`${sat.name}-${i}`}
           satellite={sat}
@@ -150,7 +195,9 @@ export default function SatelliteLayer({ group = 'active', limit = 50 }) {
           onHover={() => setHoveredIndex(i)}
           onUnhover={() => setHoveredIndex(null)}
         />
+
       ))}
+
     </group>
   );
 }

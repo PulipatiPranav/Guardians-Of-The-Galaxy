@@ -3,6 +3,7 @@ import Globe from './components/Globe';
 import SatelliteLayer from './components/SatelliteLayer';
 import CollisionAlert from './components/CollisionAlert';
 import ManeuverPanel from './components/ManeuverPanel';
+import SatelliteOrbit from "./components/SatelliteOrbit";
 import './App.css';
 
 /**
