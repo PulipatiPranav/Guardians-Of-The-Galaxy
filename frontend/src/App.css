@@ -366,3 +366,43 @@ body {
     border-bottom: 1px solid var(--border);
   }
 }
+
+.satellite-selector-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.satellite-selector-wrapper select {
+
+  background: rgba(10,10,20,0.9);
+  color: #e0f7fa;
+
+  border: 1px solid #00e5ff;
+  border-radius: 6px;
+
+  padding: 6px 10px;
+
+  font-size: 13px;
+
+  outline: none;
+
+  transition: all 0.2s ease;
+}
+
+.satellite-selector-wrapper select:hover {
+  border-color: #4fc3f7;
+}
+
+.satellite-selector-wrapper select:focus {
+  border-color: #00e5ff;
+  box-shadow: 0 0 6px #00e5ff;
+}
+
+.satellite-selector-wrapper select {
+  appearance: none;
+}
+
+.action-btn {
+  margin-top: 6px;
+}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SatelliteSelector from "./SatelliteSelector";
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -10,8 +11,19 @@ const RISK_COLORS = {
 };
 
 /**
+ * Demo satellite list for selector UI.
+ * (Safe placeholder — does NOT affect backend logic yet)
+ */
+const DEMO_SATELLITES = [
+  { name: "ISS (ZARYA)" },
+  { name: "STARLINK-1001" },
+  { name: "STARLINK-1025" },
+  { name: "NOAA-19" },
+  { name: "HUBBLE" },
+];
+
+/**
  * Sample TLE pair for the demo "Check Collision" button.
- * Replace with dynamic values in a production build.
  */
 const DEMO_TLE = {
   line1_a: '1 25544U 98067A   24001.50000000  .00001234  00000-0  27416-4 0  9990',
@@ -20,23 +32,22 @@ const DEMO_TLE = {
   line2_b: '2 44691  53.0000  60.0000 0001000  90.0000 270.0000 15.06000000123456',
 };
 
-/**
- * CollisionAlert — panel that displays collision risk data and allows the user
- * to trigger a collision check via the backend API.
- *
- * @param {object}   props
- * @param {object}   [props.alertData]     – Pre-loaded collision result (optional)
- * @param {function} [props.onDataChange]  – Called with new collision result after check
- */
 export default function CollisionAlert({ alertData, onDataChange }) {
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(alertData || null);
 
+  // NEW: satellite selector state
+  const [satA, setSatA] = useState(null);
+  const [satB, setSatB] = useState(null);
+
   async function runCollisionCheck() {
     setLoading(true);
     setError(null);
+
     try {
+
       const params = new URLSearchParams({
         line1_a: DEMO_TLE.line1_a,
         line2_a: DEMO_TLE.line2_a,
@@ -44,11 +55,17 @@ export default function CollisionAlert({ alertData, onDataChange }) {
         line2_b: DEMO_TLE.line2_b,
         hours: '24',
       });
+
       const res = await fetch(`${API_URL}/collision-check?${params}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+
+      if (!res.ok)
+        throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+
       const data = await res.json();
+
       setResult(data);
       onDataChange && onDataChange(data);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -56,14 +73,28 @@ export default function CollisionAlert({ alertData, onDataChange }) {
     }
   }
 
-  const riskColor = result ? (RISK_COLORS[result.risk_level] || '#9e9e9e') : '#9e9e9e';
+  const riskColor = result
+    ? (RISK_COLORS[result.risk_level] || '#9e9e9e')
+    : '#9e9e9e';
+
   const isCritical = result?.risk_level === 'CRITICAL';
 
   return (
     <div className="panel collision-panel">
+
       <h2 className="panel-title">
         🛰 Collision Risk Monitor
       </h2>
+
+    <div className="satellite-selector-wrapper">
+      <SatelliteSelector
+        satellites={DEMO_SATELLITES}
+        satA={satA}
+        satB={satB}
+        setSatA={setSatA}
+        setSatB={setSatB}
+    />
+    </div>
 
       <button
         className="action-btn"
@@ -78,7 +109,11 @@ export default function CollisionAlert({ alertData, onDataChange }) {
       )}
 
       {result && (
-        <div className={`risk-card ${isCritical ? 'pulse' : ''}`} style={{ borderColor: riskColor }}>
+        <div
+          className={`risk-card ${isCritical ? 'pulse' : ''}`}
+          style={{ borderColor: riskColor }}
+        >
+
           <div className="risk-badge" style={{ background: riskColor }}>
             {result.risk_level}
           </div>
@@ -100,6 +135,7 @@ export default function CollisionAlert({ alertData, onDataChange }) {
                   {new Date(result.closest_event.time).toUTCString()}
                 </span>
               </div>
+
               <div className="risk-detail">
                 <span className="detail-label">Sat A Position</span>
                 <span className="detail-value detail-mono">
@@ -108,6 +144,7 @@ export default function CollisionAlert({ alertData, onDataChange }) {
                   {result.closest_event.position_a.z.toFixed(0)}) km
                 </span>
               </div>
+
               <div className="risk-detail">
                 <span className="detail-label">Sat B Position</span>
                 <span className="detail-value detail-mono">
@@ -124,6 +161,7 @@ export default function CollisionAlert({ alertData, onDataChange }) {
             {result.risk_level === 'WARNING' && '⚠ Elevated risk — monitor closely.'}
             {result.risk_level === 'SAFE' && '✅ No immediate collision threat detected.'}
           </p>
+
         </div>
       )}
 
@@ -132,6 +170,7 @@ export default function CollisionAlert({ alertData, onDataChange }) {
           Press "Check Collision" to run a conjunction analysis between two satellites.
         </p>
       )}
+
     </div>
   );
 }
