@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SatelliteSelector from "./SatelliteSelector";
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
@@ -10,49 +10,46 @@ const RISK_COLORS = {
   SAFE: '#4caf50',
 };
 
-/**
- * Demo satellite list for selector UI.
- * (Safe placeholder — does NOT affect backend logic yet)
- */
-const DEMO_SATELLITES = [
-  { name: "ISS (ZARYA)" },
-  { name: "STARLINK-1001" },
-  { name: "STARLINK-1025" },
-  { name: "NOAA-19" },
-  { name: "HUBBLE" },
-];
-
-/**
- * Sample TLE pair for the demo "Check Collision" button.
- */
-const DEMO_TLE = {
-  line1_a: '1 25544U 98067A   24001.50000000  .00001234  00000-0  27416-4 0  9990',
-  line2_a: '2 25544  51.6416  29.0903 0003456  85.1234 274.9999 15.49568876440123',
-  line1_b: '1 44691U 19074B   24001.50000000  .00000123  00000-0  12345-4 0  9991',
-  line2_b: '2 44691  53.0000  60.0000 0001000  90.0000 270.0000 15.06000000123456',
-};
-
-export default function CollisionAlert({ alertData, onDataChange }) {
+export default function CollisionAlert({ 
+  satellites = [],
+  satA,
+  satB,
+  setSatA,
+  setSatB,
+  selectedSatA,
+  selectedSatB,
+  alertData, 
+  onDataChange,
+  pipelineStage,
+  setPipelineStage 
+}) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(alertData || null);
 
-  // NEW: satellite selector state
-  const [satA, setSatA] = useState(null);
-  const [satB, setSatB] = useState(null);
+  useEffect(() => {
+    // Auto-run if triggered by App.jsx pipeline
+    if (pipelineStage === 'propagating' && selectedSatA && selectedSatB) {
+      runCollisionCheck();
+    }
+  }, [pipelineStage, selectedSatA, selectedSatB]);
 
   async function runCollisionCheck() {
+    if (!selectedSatA || !selectedSatB) {
+      setError("Please select both satellites first.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
     try {
 
       const params = new URLSearchParams({
-        line1_a: DEMO_TLE.line1_a,
-        line2_a: DEMO_TLE.line2_a,
-        line1_b: DEMO_TLE.line1_b,
-        line2_b: DEMO_TLE.line2_b,
+        line1_a: selectedSatA.line1,
+        line2_a: selectedSatA.line2,
+        line1_b: selectedSatB.line1,
+        line2_b: selectedSatB.line2,
         hours: '24',
       });
 
@@ -64,10 +61,20 @@ export default function CollisionAlert({ alertData, onDataChange }) {
       const data = await res.json();
 
       setResult(data);
-      onDataChange && onDataChange(data);
+      if (onDataChange) onDataChange(data);
+
+      if (pipelineStage === 'propagating') {
+        // If there's a risk, auto-continue to maneuver, else just complete
+        if (data.risk_level === 'SAFE') {
+          setPipelineStage('complete');
+        } else {
+          setTimeout(() => setPipelineStage('computing_maneuver'), 100);
+        }
+      }
 
     } catch (err) {
       setError(err.message);
+      if (pipelineStage === 'propagating') setPipelineStage('idle');
     } finally {
       setLoading(false);
     }
@@ -88,7 +95,7 @@ export default function CollisionAlert({ alertData, onDataChange }) {
 
     <div className="satellite-selector-wrapper">
       <SatelliteSelector
-        satellites={DEMO_SATELLITES}
+        satellites={satellites}
         satA={satA}
         satB={satB}
         setSatA={setSatA}
@@ -109,59 +116,58 @@ export default function CollisionAlert({ alertData, onDataChange }) {
       )}
 
       {result && (
-        <div
-          className={`risk-card ${isCritical ? 'pulse' : ''}`}
-          style={{ borderColor: riskColor }}
-        >
-
-          <div className="risk-badge" style={{ background: riskColor }}>
-            {result.risk_level}
+        <div className={`risk-card ${isCritical ? 'pulse bg-critical' : result.risk_level === 'WARNING' ? 'bg-warning' : 'bg-safe'}`}>
+          <div className="risk-header-row">
+            <div className="risk-badge" style={{ background: riskColor, marginBottom: 0 }}>
+              {result.risk_level}
+            </div>
+            <p className="risk-hint" style={{ margin: 0 }}>
+              {result.risk_level === 'CRITICAL' && 'Immediate maneuver required!'}
+              {result.risk_level === 'WARNING' && 'Elevated risk — monitor closely.'}
+              {result.risk_level === 'SAFE' && 'No threat detected.'}
+            </p>
           </div>
 
-          <div className="risk-detail">
-            <span className="detail-label">Closest Approach</span>
-            <span className="detail-value">
-              {result.min_distance_km != null
-                ? `${Number(result.min_distance_km).toFixed(2)} km`
-                : '—'}
-            </span>
+          <div className="critical-headline">
+            {result.min_distance_km != null ? `${Number(result.min_distance_km).toFixed(2)} km` : '—'}
+          </div>
+          <div style={{ color: "var(--text-muted)", marginBottom: "15px", fontSize: "0.80rem" }}>
+            Est. closest approach distance
           </div>
 
           {result.closest_event && (
-            <>
-              <div className="risk-detail">
-                <span className="detail-label">Event Time</span>
-                <span className="detail-value">
-                  {new Date(result.closest_event.time).toUTCString()}
-                </span>
-              </div>
+            <div className="advanced-details">
+              <details>
+                <summary>View Telemetry Data</summary>
+                <div className="advanced-details-content">
+                  <div className="risk-detail">
+                    <span className="detail-label">Event Time</span>
+                    <span className="detail-value">
+                      {new Date(result.closest_event.time).toUTCString()}
+                    </span>
+                  </div>
 
-              <div className="risk-detail">
-                <span className="detail-label">Sat A Position</span>
-                <span className="detail-value detail-mono">
-                  ({result.closest_event.position_a.x.toFixed(0)},&nbsp;
-                  {result.closest_event.position_a.y.toFixed(0)},&nbsp;
-                  {result.closest_event.position_a.z.toFixed(0)}) km
-                </span>
-              </div>
+                  <div className="risk-detail">
+                    <span className="detail-label">Sat A Pos (km)</span>
+                    <span className="detail-value detail-mono">
+                      ({result.closest_event.position_a.x.toFixed(0)}, {result.closest_event.position_a.y.toFixed(0)}, {result.closest_event.position_a.z.toFixed(0)})
+                    </span>
+                  </div>
 
-              <div className="risk-detail">
-                <span className="detail-label">Sat B Position</span>
-                <span className="detail-value detail-mono">
-                  ({result.closest_event.position_b.x.toFixed(0)},&nbsp;
-                  {result.closest_event.position_b.y.toFixed(0)},&nbsp;
-                  {result.closest_event.position_b.z.toFixed(0)}) km
-                </span>
-              </div>
-            </>
+                  <div className="risk-detail">
+                    <span className="detail-label">Sat B Pos (km)</span>
+                    <span className="detail-value detail-mono">
+                      ({result.closest_event.position_b.x.toFixed(0)}, {result.closest_event.position_b.y.toFixed(0)}, {result.closest_event.position_b.z.toFixed(0)})
+                    </span>
+                  </div>
+                </div>
+              </details>
+            </div>
           )}
 
-          <p className="risk-hint">
-            {result.risk_level === 'CRITICAL' && '🚨 Immediate maneuver required!'}
-            {result.risk_level === 'WARNING' && '⚠ Elevated risk — monitor closely.'}
-            {result.risk_level === 'SAFE' && '✅ No immediate collision threat detected.'}
+          <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", marginTop: "10px", fontStyle: "italic", textAlign: "right", borderTop: "1px solid var(--border)", paddingTop: "8px" }}>
+            * Note: This is an uncalibrated SGP4 screening. Covariance analysis excluded for presentation.
           </p>
-
         </div>
       )}
 
