@@ -10,49 +10,37 @@ const RISK_COLORS = {
   SAFE: '#4caf50',
 };
 
-/**
- * Demo satellite list for selector UI.
- * (Safe placeholder — does NOT affect backend logic yet)
- */
-const DEMO_SATELLITES = [
-  { name: "ISS (ZARYA)" },
-  { name: "STARLINK-1001" },
-  { name: "STARLINK-1025" },
-  { name: "NOAA-19" },
-  { name: "HUBBLE" },
-];
-
-/**
- * Sample TLE pair for the demo "Check Collision" button.
- */
-const DEMO_TLE = {
-  line1_a: '1 25544U 98067A   24001.50000000  .00001234  00000-0  27416-4 0  9990',
-  line2_a: '2 25544  51.6416  29.0903 0003456  85.1234 274.9999 15.49568876440123',
-  line1_b: '1 44691U 19074B   24001.50000000  .00000123  00000-0  12345-4 0  9991',
-  line2_b: '2 44691  53.0000  60.0000 0001000  90.0000 270.0000 15.06000000123456',
-};
-
-export default function CollisionAlert({ alertData, onDataChange }) {
+export default function CollisionAlert({ 
+  satellites = [],
+  satA,
+  satB,
+  setSatA,
+  setSatB,
+  selectedSatA,
+  selectedSatB,
+  alertData, 
+  onDataChange 
+}) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(alertData || null);
 
-  // NEW: satellite selector state
-  const [satA, setSatA] = useState(null);
-  const [satB, setSatB] = useState(null);
-
   async function runCollisionCheck() {
+    if (!selectedSatA || !selectedSatB) {
+      setError("Please select both satellites first.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
     try {
 
       const params = new URLSearchParams({
-        line1_a: DEMO_TLE.line1_a,
-        line2_a: DEMO_TLE.line2_a,
-        line1_b: DEMO_TLE.line1_b,
-        line2_b: DEMO_TLE.line2_b,
+        line1_a: selectedSatA.line1,
+        line2_a: selectedSatA.line2,
+        line1_b: selectedSatB.line1,
+        line2_b: selectedSatB.line2,
         hours: '24',
       });
 
@@ -88,7 +76,7 @@ export default function CollisionAlert({ alertData, onDataChange }) {
 
     <div className="satellite-selector-wrapper">
       <SatelliteSelector
-        satellites={DEMO_SATELLITES}
+        satellites={satellites}
         satA={satA}
         satB={satB}
         setSatA={setSatA}

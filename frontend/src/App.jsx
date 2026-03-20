@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Globe from './components/Globe';
 import SatelliteLayer from './components/SatelliteLayer';
 import CollisionAlert from './components/CollisionAlert';
 import ManeuverPanel from './components/ManeuverPanel';
 import SatelliteOrbit from "./components/SatelliteOrbit";
 import './App.css';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 /**
  * App — root layout component for Orbital Guardian dashboard.
@@ -17,6 +19,30 @@ import './App.css';
  *   └─────────────────┴─────────────────┘
  */
 export default function App() {
+  const [satellites, setSatellites] = useState([]);
+  const [satA, setSatA] = useState(null);
+  const [satB, setSatB] = useState(null);
+  const [collisionResult, setCollisionResult] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/satellites?limit=500`)
+      .then(res => res.json())
+      .then(data => setSatellites(data))
+      .catch(err => console.error("Failed to fetch satellites:", err));
+  }, []);
+
+  const selectedSatA = satellites.find(s => s.name === satA);
+  const selectedSatB = satellites.find(s => s.name === satB);
+
+  const threatParams = collisionResult && collisionResult.closest_event && selectedSatA ? {
+    line1: selectedSatA.line1,
+    line2: selectedSatA.line2,
+    threat_direction_x: collisionResult.closest_event.position_b.x - collisionResult.closest_event.position_a.x,
+    threat_direction_y: collisionResult.closest_event.position_b.y - collisionResult.closest_event.position_a.y,
+    threat_direction_z: collisionResult.closest_event.position_b.z - collisionResult.closest_event.position_a.z,
+    threat_distance_km: collisionResult.min_distance_km
+  } : null;
+
   return (
     <div className="app">
       {/* ── Header ── */}
@@ -52,8 +78,21 @@ export default function App() {
 
         {/* Right column — control panels */}
         <aside className="panels-column">
-          <CollisionAlert />
-          <ManeuverPanel />
+          <CollisionAlert 
+            satellites={satellites}
+            satA={satA}
+            satB={satB}
+            setSatA={setSatA}
+            setSatB={setSatB}
+            selectedSatA={selectedSatA}
+            selectedSatB={selectedSatB}
+            alertData={collisionResult}
+            onDataChange={setCollisionResult}
+          />
+          <ManeuverPanel 
+            threatParams={threatParams}
+            onDataChange={() => {}}
+          />
         </aside>
       </main>
 

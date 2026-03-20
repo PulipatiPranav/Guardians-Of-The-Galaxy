@@ -10,18 +10,6 @@ const RISK_COLORS = {
 };
 
 /**
- * Demo TLE and threat parameters used by the "Get Recommendation" button.
- */
-const DEMO_PARAMS = {
-  line1: '1 25544U 98067A   24001.50000000  .00001234  00000-0  27416-4 0  9990',
-  line2: '2 25544  51.6416  29.0903 0003456  85.1234 274.9999 15.49568876440123',
-  threat_direction_x: 0.577,
-  threat_direction_y: 0.577,
-  threat_direction_z: 0.577,
-  threat_distance_km: 8.5,
-};
-
-/**
  * ManeuverPanel — displays AI-generated avoidance maneuver recommendations.
  *
  * @param {object}   props
@@ -34,9 +22,10 @@ export default function ManeuverPanel({ recommendation, threatParams, onDataChan
   const [error, setError] = useState(null);
   const [result, setResult] = useState(recommendation || null);
 
-  const params = threatParams || DEMO_PARAMS;
+  const params = threatParams;
 
   async function fetchRecommendation() {
+    if (!params) return;
     setLoading(true);
     setError(null);
     try {
@@ -69,7 +58,7 @@ export default function ManeuverPanel({ recommendation, threatParams, onDataChan
       <button
         className="action-btn action-btn--purple"
         onClick={fetchRecommendation}
-        disabled={loading}
+        disabled={loading || !threatParams}
       >
         {loading ? '⏳ Computing…' : '🚀 Get Recommendation'}
       </button>
@@ -118,9 +107,15 @@ export default function ManeuverPanel({ recommendation, threatParams, onDataChan
         </div>
       )}
 
-      {!result && !loading && (
+      {!result && !loading && threatParams && (
         <p className="placeholder-text">
-          Press "Get Recommendation" to generate an AI-powered avoidance maneuver plan.
+          Threat vector populated! Press "Get Recommendation" to generate an AI-powered avoidance maneuver plan.
+        </p>
+      )}
+
+      {!result && !loading && !threatParams && (
+        <p className="placeholder-text">
+          Run a collision check on two satellites first to enable the AI maneuver advisor.
         </p>
       )}
     </div>
