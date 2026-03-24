@@ -2,6 +2,7 @@
 
 > **AI-Powered Space Debris Collision Prediction & Avoidance System**
 
+
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11-green.svg)
 ![React](https://img.shields.io/badge/React-18-61dafb.svg)
