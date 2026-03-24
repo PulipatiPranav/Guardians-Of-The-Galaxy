@@ -29,19 +29,23 @@ all visualised in a stunning real-time 3-D interface.
 ## 🚨 The Problem
 
 ### 1. Massive Data Complexity
+
 Thousands of satellites and debris fragments are moving simultaneously across
 different orbital planes, altitudes, and velocities. Tracking all pairwise
 interactions in real time requires sophisticated algorithms.
 
 ### 2. Limited Collision Prediction Tools
+
 Existing systems often provide static warnings and raw trajectory data with
 no clear decision guidance for satellite operators.
 
 ### 3. No Intelligent Maneuver Planning
+
 Avoiding debris requires carefully planned burns that consider fuel limitations,
 orbital stability, and mission objectives.
 
 ### 4. Increasing Satellite Density
+
 Mega-constellations (Starlink, OneWeb, Kuiper) are launching thousands of
 satellites, dramatically increasing the probability of chain-reaction collisions
 — the dreaded **Kessler Syndrome**.
@@ -50,13 +54,13 @@ satellites, dramatically increasing the probability of chain-reaction collisions
 
 ## ✨ Key Features
 
-| Feature | Description |
-|---------|-------------|
+| Feature                          | Description                                                                      |
+| -------------------------------- | -------------------------------------------------------------------------------- |
 | 🌍 **3-D Orbital Visualization** | Interactive spinning Earth with live satellite positions rendered using Three.js |
-| 📡 **Real-Time TLE Ingestion** | Fetches live orbital elements from Celestrak / NORAD |
-| ⚡ **SGP4 Orbital Propagation** | Predicts satellite positions hours in advance |
-| 🚨 **Collision Risk Detection** | Pairwise closest-approach analysis with CRITICAL / WARNING / SAFE classification |
-| 🤖 **AI Maneuver Advisor** | Recommends optimal avoidance burns with delta-v, fuel cost, and confidence score |
+| 📡 **Real-Time TLE Ingestion**   | Fetches live orbital elements from Celestrak / NORAD                             |
+| ⚡ **SGP4 Orbital Propagation**  | Predicts satellite positions hours in advance                                    |
+| 🚨 **Collision Risk Detection**  | Pairwise closest-approach analysis with CRITICAL / WARNING / SAFE classification |
+| 🤖 **AI Maneuver Advisor**       | Recommends optimal avoidance burns with delta-v, fuel cost, and confidence score |
 
 ---
 
@@ -85,13 +89,13 @@ satellites, dramatically increasing the probability of chain-reaction collisions
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18, Three.js (via `@react-three/fiber`, `@react-three/drei`) |
-| **Backend** | Python 3.11, FastAPI, Uvicorn |
-| **Orbital Mechanics** | SGP4 (`sgp4` library), NumPy |
-| **Data Sources** | Celestrak TLE feeds, NORAD satellite catalog |
-| **Containerisation** | Docker |
+| Layer                 | Technology                                                         |
+| --------------------- | ------------------------------------------------------------------ |
+| **Frontend**          | React 18, Three.js (via `@react-three/fiber`, `@react-three/drei`) |
+| **Backend**           | Python 3.11, FastAPI, Uvicorn                                      |
+| **Orbital Mechanics** | SGP4 (`sgp4` library), NumPy                                       |
+| **Data Sources**      | Celestrak TLE feeds, NORAD satellite catalog                       |
+| **Containerisation**  | Docker                                                             |
 
 ---
 
@@ -174,12 +178,13 @@ Health check.
 
 Fetch live TLE data from Celestrak.
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
+| Parameter | Type   | Default  | Description               |
+| --------- | ------ | -------- | ------------------------- |
 | `group`   | string | `active` | Celestrak satellite group |
-| `limit`   | int    | `50`     | Max satellites to return |
+| `limit`   | int    | `50`     | Max satellites to return  |
 
 **Example response:**
+
 ```json
 [
   {
@@ -196,14 +201,15 @@ Fetch live TLE data from Celestrak.
 
 Propagate a satellite orbit using SGP4.
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `line1`        | string | — | TLE line 1 |
-| `line2`        | string | — | TLE line 2 |
-| `hours`        | int    | `24` | Hours ahead |
-| `step_minutes` | int    | `10` | Step size in minutes |
+| Parameter      | Type   | Default | Description          |
+| -------------- | ------ | ------- | -------------------- |
+| `line1`        | string | —       | TLE line 1           |
+| `line2`        | string | —       | TLE line 2           |
+| `hours`        | int    | `24`    | Hours ahead          |
+| `step_minutes` | int    | `10`    | Step size in minutes |
 
 **Example response:**
+
 ```json
 [
   {
@@ -223,13 +229,14 @@ Propagate a satellite orbit using SGP4.
 
 Check collision risk between two satellites.
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `line1_a`, `line2_a` | string | — | TLE for satellite A |
-| `line1_b`, `line2_b` | string | — | TLE for satellite B |
-| `hours` | int | `24` | Propagation window |
+| Parameter            | Type   | Default | Description         |
+| -------------------- | ------ | ------- | ------------------- |
+| `line1_a`, `line2_a` | string | —       | TLE for satellite A |
+| `line1_b`, `line2_b` | string | —       | TLE for satellite B |
+| `hours`              | int    | `24`    | Propagation window  |
 
 **Example response:**
+
 ```json
 {
   "min_distance_km": 8.34,
@@ -249,13 +256,14 @@ Check collision risk between two satellites.
 
 Get AI-generated avoidance maneuver recommendation.
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `line1`, `line2` | string | — | TLE of threatened satellite |
-| `threat_direction_x/y/z` | float | `1,0,0` | Threat direction vector |
-| `threat_distance_km` | float | — | Distance to threat in km |
+| Parameter                | Type   | Default | Description                 |
+| ------------------------ | ------ | ------- | --------------------------- |
+| `line1`, `line2`         | string | —       | TLE of threatened satellite |
+| `threat_direction_x/y/z` | float  | `1,0,0` | Threat direction vector     |
+| `threat_distance_km`     | float  | —       | Distance to threat in km    |
 
 **Example response:**
+
 ```json
 {
   "maneuver_type": "Cross-Track Avoidance Burn",
@@ -336,11 +344,11 @@ orbital-guardian/
 
 ## 📊 Data Sources
 
-| Source | Description |
-|--------|-------------|
-| [Celestrak](https://celestrak.org) | Primary source for NORAD TLE data |
-| [Space-Track](https://www.space-track.org) | Official US DoD debris catalog |
-| NORAD | Two-Line Element catalog standard |
+| Source                                     | Description                       |
+| ------------------------------------------ | --------------------------------- |
+| [Celestrak](https://celestrak.org)         | Primary source for NORAD TLE data |
+| [Space-Track](https://www.space-track.org) | Official US DoD debris catalog    |
+| NORAD                                      | Two-Line Element catalog standard |
 
 ---
 
@@ -356,13 +364,30 @@ orbital-guardian/
 
 ---
 
-## 🏆 Hackathon Context
+## 🚀 Working Demo Screens
 
-Built for the **IIT Hyderabad Hackathon** as a demonstration of applied orbital
-mechanics, real-time data processing, and AI-driven decision support for the
-growing challenge of space debris management.
+<p align="center">
+  <img src="workingScreenshots/welcome.png" width="45%" />
+  <img src="workingScreenshots/selectSatellite.png" width="45%" />
+</p>
 
----
+<p align="center">
+  <img src="workingScreenshots/satellite.png" width="45%" />
+  <img src="workingScreenshots/result.png" width="45%" />
+  
+</p>
+
+<p align="center">
+
+  <img src="workingScreenshots/maneuver.png" width="45%" />
+  
+</p>
+
+## 🏆 Hackathon Achievement
+
+Built for the **IIT Hyderabad Hackathon**, where our project stood out among numerous entries — advancing to the **Finals** and securing a place in the **Top 10 teams**.
+
+This project demonstrates applied orbital mechanics, real-time data processing, and AI-driven decision support to tackle the growing challenge of space debris management.
 
 ## 🤝 Contributing
 
