@@ -2,7 +2,6 @@
 
 > **AI-Powered Space Debris Collision Prediction & Avoidance System**
 
-
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11-green.svg)
 ![React](https://img.shields.io/badge/React-18-61dafb.svg)
@@ -368,19 +367,19 @@ orbital-guardian/
 ## 🚀 Working Demo Screens
 
 <p align="center">
-  <img src="workingScreenshots/welcome.png" width="45%" />
-  <img src="workingScreenshots/selectSatellite.png" width="45%" />
+  <img src="workingScreenshots/welcome.jpeg" width="45%" />
+  <img src="workingScreenshots/selectSatellite.jpeg" width="45%" />
 </p>
 
 <p align="center">
-  <img src="workingScreenshots/satellite.png" width="45%" />
-  <img src="workingScreenshots/result.png" width="45%" />
+  <img src="workingScreenshots/satellite.jpeg" width="45%" />
+  <img src="workingScreenshots/result.jpeg" width="45%" />
   
 </p>
 
 <p align="center">
 
-  <img src="workingScreenshots/maneuver.png" width="45%" />
+  <img src="workingScreenshots/maneuver.jpeg" width="45%" />
   
 </p>
 
