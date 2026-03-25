@@ -10,6 +10,18 @@
 
 ---
 
+## 🔗 Live Demo
+
+<p align="center">
+  <a href="https://guardians-of-the-galaxy-phi.vercel.app/">
+    <img src="https://img.shields.io/badge/🚀_Launch_Live_Demo-Click_Here-blue?style=for-the-badge" />
+  </a>
+</p>
+
+<p align="center">
+  ⚡ Best experienced on desktop for full 3D visualization
+</p>
+
 ## 🌌 Overview
 
 Earth's orbit is becoming dangerously crowded.
